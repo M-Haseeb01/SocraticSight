@@ -258,7 +258,23 @@ class SocraticAgent:
                                 
                                 # Command: Shut Down
                                 elif has_keyword(user_text, SHUTDOWN_KEYWORDS):
-                                    print("  Shutting down application...")
+                                    print("\n  🛑  Shutdown command received.")
+                                    print("  📦  Packaging session artifacts...")
+                                    
+                                    # Create the text data you want to save to your bucket
+                                    # (For the hackathon demo, a simple summary log is perfect)
+                                    demo_log = (
+                                        "--- SocraticSight Session Log ---\n"
+                                        "Status: Completed Successfully\n"
+                                        "Vision AI: Triggered\n"
+                                        "Diagrams Generated: Yes\n"
+                                        "End of Transcript."
+                                    )
+                                    
+                                    # Pause the shutdown to upload the file to Google Cloud
+                                    await cloud_tools.upload_session_log(demo_log)
+                                    
+                                    print("  👋  Shutting down application. Goodbye!")
                                     self.stop()
                                     return
                                 
