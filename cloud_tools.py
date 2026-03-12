@@ -8,10 +8,11 @@ import os
 from google import genai
 from google.genai import types
 from google.cloud import storage
+import datetime
 
 # ─── CONFIGURATION (FILL THESE IN!) ────────────────────────────────────────────
-GCP_PROJECT_ID = "YOUR-PROJECT-ID"        
-GCS_BUCKET_NAME = "YOUR-BUCKET-NAME"      
+GCP_PROJECT_ID = "YOUR-PROJECT-ID"         
+GCS_BUCKET_NAME = "YOUR-BUCKET-NAME"       
 LOCATION = "us-central1"
 # ───────────────────────────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ async def generate_diagram_on_cloud(prompt: str, save_path: str = "diagram.png")
     Calls Google Cloud Vertex AI (Imagen) to generate a diagram.
     """
     print("  [CLOUD MODULE TRIGGERED: VERTEX AI IMAGEN]")
-    print(f"  ➜ Routing prompt to Google Cloud: '{prompt}'")
+    print(f"  Routing prompt to Google Cloud: '{prompt}'")
     
     try:
         # Create a dedicated client that routes strictly to Google Cloud Vertex AI
@@ -62,9 +63,9 @@ async def save_session_to_cloud(transcript: str, image_path: str = "diagram.png"
     """
     Summarizes the session using Vertex AI and uploads the summary and diagram to Cloud Storage.
     """
-   
+    
     print("  [CLOUD MODULE TRIGGERED: CLOUD STORAGE]")
-    print("  Summarizing session transcript...")
+    print("  ➜ Summarizing session transcript...")
     
     try:
         # 1. Summarize the long transcript using Vertex AI Gemini
@@ -85,7 +86,7 @@ async def save_session_to_cloud(transcript: str, image_path: str = "diagram.png"
         with open(summary_file, "w", encoding="utf-8") as f:
             f.write(summary_text)
         
-        print("   Uploading files to Google Cloud Storage...")
+        print("  ➜ Uploading files to Google Cloud Storage...")
         
         # 2. Upload to Google Cloud Storage Bucket
         storage_client = storage.Client(project=GCP_PROJECT_ID)
@@ -94,15 +95,41 @@ async def save_session_to_cloud(transcript: str, image_path: str = "diagram.png"
         # Upload the text summary
         blob_summary = bucket.blob("study_notes/session_summary.txt")
         blob_summary.upload_from_filename(summary_file)
-        print(f"   Uploaded {summary_file} to GCS bucket: {GCS_BUCKET_NAME}")
+        print(f"  Uploaded {summary_file} to GCS bucket: {GCS_BUCKET_NAME}")
         
         # Upload the diagram (if one was generated during the session)
         if os.path.exists(image_path):
             blob_image = bucket.blob(f"study_notes/{image_path}")
             blob_image.upload_from_filename(image_path)
-            print(f"   Uploaded {image_path} to GCS bucket: {GCS_BUCKET_NAME}")
+            print(f"  Uploaded {image_path} to GCS bucket: {GCS_BUCKET_NAME}")
         
     except Exception as e:
-        print(f"   [ERROR] Cloud Storage error: {e}")
+        print(f" [ERROR] Cloud Storage error: {e}")
         
     print("☁️ " * 20 + "\n")
+
+
+
+
+async def upload_session_log(session_data: str):
+    """Uploads the final session log to the Google Cloud Storage bucket."""
+    print("  ☁️   Connecting to Google Cloud Storage...")
+    try:
+        # Initialize the GCS client
+        client = storage.Client(project=GCP_PROJECT_ID)
+        bucket = client.bucket(GCS_BUCKET_NAME)
+        
+        # Create a unique filename using the current date and time
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"SocraticSight_Session_{timestamp}.txt"
+        
+        # Create the file in the bucket and upload the text
+        blob = bucket.blob(filename)
+        blob.upload_from_string(session_data)
+        
+        print(f"  SUCCESS! Session archived securely to bucket [{GCS_BUCKET_NAME}]")
+        print(f"  Filename: {filename}")
+        return True
+    except Exception as e:
+        print(f"  GCS Upload failed. Check your bucket name or permissions: {e}")
+        return False
