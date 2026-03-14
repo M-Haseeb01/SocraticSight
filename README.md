@@ -41,7 +41,7 @@ SocraticSight operates on an Edge-to-Cloud decoupled architecture to ensure low-
 
 Clone the repository and initialize the virtual environment:
 
-    git clone [https://github.com/YOUR_USERNAME/SocraticSight.git](https://github.com/M-Haseeb01/SocraticSight.git)
+    git clone https://github.com/M-Haseeb01/SocraticSight.git
     cd SocraticSight
     python -m venv venv
     venv\Scripts\activate  # On Windows
